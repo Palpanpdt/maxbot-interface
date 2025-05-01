@@ -540,6 +540,205 @@
     </div>
 </div>
     <!-- Scripts chargés en bas de page -->
+     <!-- Ajouter après la ligne 82 dans le HTML -->
+<div class="panel debug-panel">
+    <h2>Débogage et Diagnostics</h2>
+    <div class="form-row">
+        <button id="debugNetworkBtn" class="action-button">Vérifier Réseau</button>
+        <button id="debugContractBtn" class="action-button">Diagnostiquer Contrat</button>
+        <button id="debugTransactionBtn" class="action-button">Simuler Transaction</button>
+    </div>
+    <div class="logs-container" id="debugLogs">
+        <div class="log-entry log-info">
+            <span class="log-time">[Diagnostic]</span> Utilisez ces boutons pour résoudre les problèmes.
+        </div>
+    </div>
+</div>
+
+<!-- Ajouter le script correspondant -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Ajouter les fonctions de débogage
+    document.getElementById('debugNetworkBtn').addEventListener('click', async function() {
+        const debugLogs = document.getElementById('debugLogs');
+        debugLogs.innerHTML = '<div class="log-entry log-info"><span class="log-time">[Diagnostic]</span> Vérification du réseau...</div>';
+        
+        try {
+            // Vérifier le réseau
+            const chainId = await web3.eth.getChainId();
+            let networkName;
+            switch(chainId) {
+                case 1: networkName = "Ethereum Mainnet"; break;
+                case 137: networkName = "Polygon Mainnet"; break;
+                case 80001: networkName = "Polygon Mumbai Testnet"; break;
+                default: networkName = `ID de chaîne inconnu: ${chainId}`;
+            }
+            
+            // Vérifier le solde
+            const balance = await web3.eth.getBalance(userAccount);
+            const balanceEth = web3.utils.fromWei(balance, 'ether');
+            
+            debugLogs.innerHTML += `
+                <div class="log-entry log-success">
+                    <span class="log-time">[Réseau]</span> Connecté à ${networkName}
+                </div>
+                <div class="log-entry log-info">
+                    <span class="log-time">[Compte]</span> ${userAccount}
+                </div>
+                <div class="log-entry log-info">
+                    <span class="log-time">[Solde]</span> ${balanceEth} ${chainId == 137 ? 'MATIC' : 'ETH'}
+                </div>
+            `;
+        } catch (error) {
+            debugLogs.innerHTML += `
+                <div class="log-entry log-error">
+                    <span class="log-time">[Erreur]</span> ${error.message}
+                </div>
+            `;
+        }
+    });
+    
+    document.getElementById('debugContractBtn').addEventListener('click', async function() {
+        const debugLogs = document.getElementById('debugLogs');
+        const contractAddress = document.getElementById('contract-address').value;
+        
+        debugLogs.innerHTML = `
+            <div class="log-entry log-info">
+                <span class="log-time">[Diagnostic]</span> Vérification du contrat à l'adresse ${contractAddress}...
+            </div>
+        `;
+        
+        try {
+            // Vérifier si le contrat existe
+            const code = await web3.eth.getCode(contractAddress);
+            if (code === '0x' || code === '0x0') {
+                debugLogs.innerHTML += `
+                    <div class="log-entry log-error">
+                        <span class="log-time">[Contrat]</span> Aucun contrat déployé à cette adresse!
+                    </div>
+                `;
+                return;
+            }
+            
+            debugLogs.innerHTML += `
+                <div class="log-entry log-success">
+                    <span class="log-time">[Contrat]</span> Contrat détecté à l'adresse ${contractAddress}
+                </div>
+            `;
+            
+            // Tester les méthodes principales
+            const methods = ['forceExecuteFlashLoan', 'checkArbitrageOpportunity', 'isOperational'];
+            for (const method of methods) {
+                try {
+                    if (!contract.methods[method]) {
+                        debugLogs.innerHTML += `
+                            <div class="log-entry log-warning">
+                                <span class="log-time">[Méthode]</span> ${method} n'existe pas dans l'ABI
+                            </div>
+                        `;
+                        continue;
+                    }
+                    
+                    // Pour les méthodes view simples, essayer de les appeler
+                    if (method === 'isOperational') {
+                        const result = await contract.methods[method]().call();
+                        debugLogs.innerHTML += `
+                            <div class="log-entry log-success">
+                                <span class="log-time">[${method}]</span> Résultat: ${result}
+                            </div>
+                        `;
+                    } else {
+                        debugLogs.innerHTML += `
+                            <div class="log-entry log-info">
+                                <span class="log-time">[${method}]</span> Présent dans l'ABI
+                            </div>
+                        `;
+                    }
+                } catch (methodError) {
+                    debugLogs.innerHTML += `
+                        <div class="log-entry log-error">
+                            <span class="log-time">[${method}]</span> Erreur: ${methodError.message}
+                        </div>
+                    `;
+                }
+            }
+        } catch (error) {
+            debugLogs.innerHTML += `
+                <div class="log-entry log-error">
+                    <span class="log-time">[Erreur]</span> ${error.message}
+                </div>
+            `;
+        }
+    });
+    
+    document.getElementById('debugTransactionBtn').addEventListener('click', async function() {
+        const debugLogs = document.getElementById('debugLogs');
+        debugLogs.innerHTML = `
+            <div class="log-entry log-info">
+                <span class="log-time">[Diagnostic]</span> Simulation de transaction...
+            </div>
+        `;
+        
+        try {
+            const tokenSymbol = document.getElementById('flashloan-token').value;
+            const tokenAddress = TOKENS[tokenSymbol];
+            const amountInput = document.getElementById('flashloan-amount').value || '1000';
+            const amount = convertAmount(amountInput, tokenSymbol);
+            
+            debugLogs.innerHTML += `
+                <div class="log-entry log-info">
+                    <span class="log-time">[Params]</span> Token: ${tokenSymbol} (${tokenAddress})
+                </div>
+                <div class="log-entry log-info">
+                    <span class="log-time">[Params]</span> Montant: ${amountInput} (converti: ${amount})
+                </div>
+            `;
+            
+            // Simuler un appel à la méthode
+            try {
+                await contract.methods.forceExecuteFlashLoan(tokenAddress, amount).call({from: userAccount});
+                debugLogs.innerHTML += `
+                    <div class="log-entry log-success">
+                        <span class="log-time">[Simulation]</span> Simulation réussie! La transaction devrait fonctionner.
+                    </div>
+                `;
+            } catch (simulationError) {
+                let errorMessage = simulationError.message;
+                
+                debugLogs.innerHTML += `
+                    <div class="log-entry log-error">
+                        <span class="log-time">[Simulation]</span> La transaction échouerait.
+                    </div>
+                    <div class="log-entry log-error">
+                        <span class="log-time">[Erreur]</span> ${errorMessage}
+                    </div>
+                `;
+                
+                // Suggestions pour résoudre le problème
+                if (errorMessage.includes("gas required exceeds")) {
+                    debugLogs.innerHTML += `
+                        <div class="log-entry log-warning">
+                            <span class="log-time">[Solution]</span> Augmentez la limite de gaz.
+                        </div>
+                    `;
+                } else if (errorMessage.includes("revert")) {
+                    debugLogs.innerHTML += `
+                        <div class="log-entry log-warning">
+                            <span class="log-time">[Solution]</span> Vérifiez les paramètres ou l'état du contrat.
+                        </div>
+                    `;
+                }
+            }
+        } catch (error) {
+            debugLogs.innerHTML += `
+                <div class="log-entry log-error">
+                    <span class="log-time">[Erreur]</span> ${error.message}
+                </div>
+            `;
+        }
+    });
+});
+</script>
 </body>
 </html>
 /* Styles CSS à ajouter dans la section <head> du HTML */
@@ -2054,30 +2253,52 @@ async function checkIfConnected() {
 }
     
     // Connexion à MetaMask
-    async function connectWallet() {
-        if (typeof window.ethereum === 'undefined') {
-            showNotification('MetaMask non détecté', 'Veuillez installer MetaMask pour utiliser cette application.', 'error');
-            addLog('MetaMask non détecté. Veuillez l\'installer.', 'error', 'all');
-            return;
-        }
-        
-        try {
-            addLog('Connexion à MetaMask en cours...', 'info', 'all');
-            
-            // Demande l'autorisation à l'utilisateur
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            userAccount = accounts[0];
-            console.log('Compte connecté:', userAccount);
-            
-            // Configure la connexion Web3
-            await setupWeb3Connection();
-            
-        } catch (error) {
-            console.error('Erreur lors de la connexion:', error);
-            addLog(`Erreur de connexion: ${error.message}`, 'error', 'all');
-            showNotification('Erreur de connexion', error.message, 'error');
-        }
+// Dans votre fichier principal ou dans un nouveau fichier wallet-fix.js
+async function connectWallet() {
+    if (typeof window.ethereum === 'undefined') {
+        addLog('MetaMask non détecté. Veuillez installer MetaMask.', 'error', 'all');
+        return;
     }
+    
+    try {
+        // Demander la connexion à l'utilisateur
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        userAccount = accounts[0];
+        
+        // Initialiser Web3
+        window.web3 = new Web3(window.ethereum);
+        
+        // IMPORTANT: Initialiser correctement le contrat
+        const contractAddress = document.getElementById('contract-address').value;
+        window.contract = new window.web3.eth.Contract(CONTRACT_ABI, contractAddress);
+        
+        // Marquer comme connecté
+        isConnected = true;
+        
+        // Mettre à jour l'interface
+        document.getElementById('walletContainer').innerHTML = `
+            <div style="display: flex; flex-direction: column;">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-indicator status-active"></div>
+                    <span style="margin-left: 5px;">${shortenAddress(userAccount)}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-dim); margin-top: 5px;">
+                    Connecté
+                </div>
+            </div>
+        `;
+        
+        // Activer les boutons
+        document.querySelectorAll('.action-button').forEach(button => {
+            button.disabled = false;
+        });
+        
+        addLog(`Connecté avec succès: ${shortenAddress(userAccount)}`, 'success', 'all');
+    } catch (error) {
+        console.error('Erreur lors de la connexion:', error);
+        addLog(`Erreur de connexion: ${error.message}`, 'error', 'all');
+    }
+}
     
     // Configuration de Web3 et initialisation du contrat
     async function setupWeb3Connection() {
@@ -4933,46 +5154,134 @@ async function verifyTransactions() {
 }
 
 // Vérifier les transactions après connexion et périodiquement
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialiser la connexion Web3 d'abord
-    async function initializeApp() {
-        if (typeof window.ethereum !== 'undefined') {
-            // Demander la connexion du portefeuille
-            try {
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                if (accounts.length > 0) {
-                    userAccount = accounts[0];
-                    
-                    // Initialiser Web3
-                    web3 = new Web3(window.ethereum);
-                    
-                    // Vérifier le réseau
-                    const chainId = await web3.eth.getChainId();
-                    if (chainId !== 137) {
-                        addLog('Veuillez vous connecter au réseau Polygon', 'warning', 'all');
-                    } else {
-                        // Initialiser le contrat
-                        const contractAddress = document.getElementById('contract-address').value || CONTRACT_ADDRESS;
-                        contract = new web3.eth.Contract(CONTRACT_ABI, contractAddress);
-                        
-                        // Initialiser les modules
-                        await initializeExtensions();
-                        
-                        addLog('Application initialisée avec succès', 'success', 'all');
+// contract-fix.js
+(function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Bouton de diagnostic
+        const diagnosticBtn = document.getElementById('debugContractBtn');
+        if (diagnosticBtn) {
+            // Remplacer l'ancien gestionnaire d'événement
+            const oldHandler = diagnosticBtn.onclick;
+            diagnosticBtn.onclick = null;
+            
+            // Nouveau gestionnaire avec correction
+            diagnosticBtn.addEventListener('click', async function() {
+                const debugLogs = document.getElementById('debugLogs');
+                const contractAddress = document.getElementById('contract-address').value;
+                
+                debugLogs.innerHTML = `
+                    <div class="log-entry log-info">
+                        <span class="log-time">[Diagnostic]</span> Vérification du contrat à l'adresse ${contractAddress}...
+                    </div>
+                `;
+                
+                try {
+                    // Vérifier que Web3 est disponible 
+                    if (typeof Web3 === 'undefined') {
+                        debugLogs.innerHTML += `
+                            <div class="log-entry log-error">
+                                <span class="log-time">[Erreur]</span> La bibliothèque Web3 n'est pas chargée
+                            </div>
+                        `;
+                        return;
                     }
+                    
+                    // Créer une instance Web3 locale pour le diagnostic
+                    let web3Instance;
+                    if (window.ethereum) {
+                        web3Instance = new Web3(window.ethereum);
+                    } else if (window.web3) {
+                        web3Instance = new Web3(window.web3.currentProvider);
+                    } else {
+                        throw new Error("Aucun provider Web3 détecté");
+                    }
+                    
+                    // Vérifier si le contrat existe
+                    const code = await web3Instance.eth.getCode(contractAddress);
+                    if (code === '0x' || code === '0x0') {
+                        debugLogs.innerHTML += `
+                            <div class="log-entry log-error">
+                                <span class="log-time">[Contrat]</span> Aucun contrat déployé à cette adresse!
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    debugLogs.innerHTML += `
+                        <div class="log-entry log-success">
+                            <span class="log-time">[Contrat]</span> Contrat détecté à l'adresse ${contractAddress}
+                        </div>
+                    `;
+                    
+                    // CORRECTION : Créer une nouvelle instance du contrat avec web3Instance
+                    const contract = new web3Instance.eth.Contract(CONTRACT_ABI, contractAddress);
+                    
+                    // Stocker l'instance globalement - C'EST LA CORRECTION CLÉ
+                    window.contract = contract;
+                    
+                    // Tester les méthodes principales
+                    const methods = ['forceExecuteFlashLoan', 'checkArbitrageOpportunity', 'isOperational'];
+                    
+                    for (const method of methods) {
+                        try {
+                            if (!contract.methods[method]) {
+                                debugLogs.innerHTML += `
+                                    <div class="log-entry log-warning">
+                                        <span class="log-time">[Méthode]</span> ${method} n'existe pas dans l'ABI
+                                    </div>
+                                `;
+                                continue;
+                            }
+                            
+                            // Pour les méthodes view simples, essayer de les appeler
+                            if (method === 'isOperational') {
+                                try {
+                                    const result = await contract.methods[method]().call();
+                                    debugLogs.innerHTML += `
+                                        <div class="log-entry log-success">
+                                            <span class="log-time">[${method}]</span> Résultat: ${result}
+                                        </div>
+                                    `;
+                                } catch (callError) {
+                                    debugLogs.innerHTML += `
+                                        <div class="log-entry log-error">
+                                            <span class="log-time">[${method}]</span> Erreur d'appel: ${callError.message}
+                                        </div>
+                                    `;
+                                }
+                            } else {
+                                debugLogs.innerHTML += `
+                                    <div class="log-entry log-info">
+                                        <span class="log-time">[${method}]</span> Présent dans l'ABI
+                                    </div>
+                                `;
+                            }
+                        } catch (methodError) {
+                            debugLogs.innerHTML += `
+                                <div class="log-entry log-error">
+                                    <span class="log-time">[${method}]</span> Erreur: ${methodError.message}
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    debugLogs.innerHTML += `
+                        <div class="log-entry log-success">
+                            <span class="log-time">[Correction]</span> L'instance du contrat a été correctement réinitialisée!
+                        </div>
+                    `;
+                    
+                } catch (error) {
+                    debugLogs.innerHTML += `
+                        <div class="log-entry log-error">
+                            <span class="log-time">[Erreur]</span> ${error.message}
+                        </div>
+                    `;
                 }
-            } catch (error) {
-                console.error('Erreur d\'initialisation:', error);
-                addLog('Erreur d\'initialisation: ' + error.message, 'error', 'all');
-            }
-        } else {
-            addLog('MetaMask non détecté', 'error', 'all');
+            });
         }
-    }
-    
-    // Tenter l'initialisation automatique
-    initializeApp();
-});
+    });
+})();
 
 // Fonction réelle pour initialiser les extensions
 async function initializeExtensions() {
@@ -5271,9 +5580,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="maxbot-abi-sync.js"></script>
 <script src="maxbot-abi-emergency-fix.js"></script>
 <!-- Importation des modules externes -->script
-<script src="MLOptimizer.js"></script>
-<script src="ScannerService.js"></script>
-<script src="MorpheusTrader.js"></script>
+
 <script>
 // Script d'initialisation des modules
 document.addEventListener('DOMContentLoaded', function() {
@@ -5309,7 +5616,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script src="emergency-link.js"></script>
-<script src="MLOptimizer.js"></script>
+
 <script src="script.js"></script>
 /**
  * Code pour ajouter un lien vers le lanceur d'urgence MaxBot
@@ -5585,10 +5892,148 @@ function addEmergencyButton() {
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(addEmergencyButton, 2000); // Ajouter avec un délai pour s'assurer que la page est chargée
 });
+<!-- Solution de correction directe -->
+
+// Correction directe pour l'initialisation du contrat
+(function() {
+    console.log("Exécution de la correction d'urgence...");
+    
+    // Réinitialisation Web3 et Contract
+    function initializeContractEmergency() {
+        console.log("Initialisation d'urgence du contrat...");
+        
+        try {
+            // Créer une instance Web3 
+            if (window.ethereum) {
+                window.web3 = new Web3(window.ethereum);
+                console.log("Web3 réinitialisé avec ethereum");
+            } else if (window.web3) {
+                window.web3 = new Web3(window.web3.currentProvider);
+                console.log("Web3 réinitialisé avec currentProvider");
+            } else {
+                console.error("Aucun provider Web3 trouvé");
+                return false;
+            }
+            
+            // Récupérer l'adresse du contrat
+            const contractAddress = document.getElementById('contract-address').value || '0xb6e34063afc9072d76353135918f2cb11a2e54a7';
+            console.log("Utilisation de l'adresse du contrat:", contractAddress);
+            
+            // Vérifier que l'ABI est disponible
+            if (typeof CONTRACT_ABI === 'undefined' || !CONTRACT_ABI) {
+                console.error("L'ABI du contrat n'est pas défini");
+                return false;
+            }
+            
+            // Créer une nouvelle instance du contrat
+            window.contract = new window.web3.eth.Contract(CONTRACT_ABI, contractAddress);
+            console.log("Contrat réinitialisé:", window.contract ? "OK" : "ÉCHEC");
+            
+            // Vérifier si l'objet est correct
+            if (window.contract && window.contract.methods) {
+                console.log("Méthodes du contrat disponibles:", Object.keys(window.contract.methods).filter(m => !m.includes('0x')));
+                return true;
+            } else {
+                console.error("L'initialisation du contrat a échoué");
+                return false;
+            }
+        } catch (error) {
+            console.error("Erreur lors de l'initialisation d'urgence:", error);
+            return false;
+        }
+    }
+    
+    // Ajouter un bouton d'urgence
+    function addEmergencyButton() {
+        const fixButton = document.createElement('button');
+        fixButton.textContent = "CORRECTION D'URGENCE";
+        fixButton.style.cssText = "position: fixed; top: 10px; right: 10px; z-index: 9999; background-color: red; color: white; padding: 10px; border: none; cursor: pointer; font-weight: bold;";
+        
+        fixButton.addEventListener('click', function() {
+            const success = initializeContractEmergency();
+            
+            if (success) {
+                alert("Contrat réinitialisé avec succès! Essayez maintenant d'utiliser les fonctions.");
+                fixButton.style.backgroundColor = "green";
+                fixButton.textContent = "CORRECTION RÉUSSIE";
+            } else {
+                alert("Échec de la réinitialisation. Vérifiez la console pour plus de détails.");
+            }
+        });
+        
+        document.body.appendChild(fixButton);
+        console.log("Bouton d'urgence ajouté");
+    }
+    
+    // Attendez que le document soit chargé
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+        setTimeout(addEmergencyButton, 1000);
+    } else {
+        document.addEventListener("DOMContentLoaded", function() {
+            setTimeout(addEmergencyButton, 1000);
+        });
+    }
+    
+    // Vérifier si les objets existent déjà
+    console.log("État actuel - web3:", typeof window.web3, "contract:", typeof window.contract);
+    if (window.contract && window.contract.methods) {
+        console.log("Le contrat semble déjà initialisé");
+    } else {
+        console.log("Le contrat n'est pas correctement initialisé");
+    }
+})();
+
+// Tout le code du module MaxBotMaintenance ici
+const MaxBotMaintenance = {
+    // État du système
+    systemStatus: {
+        web3Connected: false,
+        contractOperational: false,
+        walletConnected: false,
+        networkCorrect: false,
+        pendingOperations: 0
+    },
+    
+    // Initialisation du module
+    initialize() {
+        this.createMaintenanceButton();
+        this.startBackgroundMonitoring();
+        console.log("Module de maintenance initialisé");
+    },
+    
+    // ... le reste du code ...
+};
+
+// Initialisation du module lors du chargement de la page
+document.addEventListener('DOMContentLoaded', () => {
+    MaxBotMaintenance.initialize();
+});
+
+
+</script>
+<script>
+  // Version ultra-simple - juste un bouton rouge vif
+  const btn = document.createElement('button');
+  btn.innerText = 'MAXBOT FIX';
+  btn.style.position = 'fixed';
+  btn.style.bottom = '20px';
+  btn.style.right = '20px';
+  btn.style.zIndex = '99999';
+  btn.style.backgroundColor = 'red';
+  btn.style.color = 'white';
+  btn.style.padding = '15px';
+  btn.style.fontSize = '18px';
+  btn.style.fontWeight = 'bold';
+  btn.style.border = 'none';
+  btn.style.borderRadius = '5px';
+  btn.onclick = function() { alert('Bouton cliqué!'); };
+  document.body.appendChild(btn);
 </script>
 <script src="maxbot-trading-engine.js"></script>
 <script src="maxbot-web3-fix.js"></script>
-<!-- Autres scripts -->
+<script src="MLOptimizer.js"></script>
+<script src="ScannerService.js"></script>
+<script src="MorpheusTrader.js"></script>
 <!-- Dans votre HTML, avant la fermeture de la balise </body> -->
 <script src="MaxBotOrchestrator.js"></script>
 <script src="maxbot-integration.js"></script>
@@ -5600,5 +6045,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="maxbot-utility-fix.js"></script>
 <script src="maxbot-state-variable-fix.js"></script>
 <script src="maxbot-arbitrage-fix.js"></script>
+<script src="path/to/maxbot-maintenance.js"></script>
+<script src="maxbot-blockchain-fix.js"></script>
+<script src="token-validator.js"></script>
+<script src="flashloan-validator.js"></script>
+<script src="maxbot-controller.js"></script>
+<script src="maxbotApi.js"></script>
+
 </body>
 </html>
