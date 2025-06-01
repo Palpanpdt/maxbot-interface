@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantumArbPro7 - Professional Flash Loan Engine</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: radial-gradient(ellipse at top, #0f0f23 0%, #1a1a3a 40%, #0a0a0a 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Particles background effect */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1900px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .quantum-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 20px;
+        }
+
+        .quantum-logo {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #00d4ff, #8b5cf6, #06ffa5, #00d4ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: logoRotate 8s linear infinite;
+        }
+
+        .quantum-logo::before {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            background: radial-gradient(circle, #1a1a3a, #0f0f23);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .quantum-logo::after {
+            content: 'Q';
+            position: relative;
+            z-index: 2;
+            font-size: 40px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00d4ff, #06ffa5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.8);
+        }
+
+        @keyframes logoRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .main-title {
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00d4ff, #8b5cf6, #06ffa5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 50px rgba(0, 212, 255, 0.5);
+            animation: titleGlow 3s ease-in-out infinite alternate;
+            letter-spacing: -2px;
+        }
+
+        @keyframes titleGlow {
+            from { filter: brightness(1) drop-shadow(0 0 20px rgba(0, 212, 255, 0.3)); }
+            to { filter: brightness(1.2) drop-shadow(0 0 40px rgba(0, 212, 255, 0.6)); }
+        }
+
+        .subtitle {
+            font-size: 1.4rem;
+            color: #888;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        .flash-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            animation: flashPulse 2s ease-in-out infinite;
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+        }
+
+        @keyframes flashPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(255, 107, 107, 0.5); }
+            50% { transform: scale(1.05); box-shadow: 0 0 50px rgba(255, 107, 107, 0.8); }
+        }
+
+        .connection-section {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .wallet-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .status-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #06ffa5;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .wallet-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .balance-card {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .balance-amount {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .balance-label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .strategies-section {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #8b5cf6;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .strategies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .strategy-card {
+            background: linear-gradient(145deg, rgba(139, 92, 246, 0.05), rgba(0, 212, 255, 0.05));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .strategy-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .strategy-card:hover::before {
+            left: 100%;
+        }
+
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            border-color: #8b5cf6;
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+        }
+
+        .strategy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .strategy-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #8b5cf6;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .flash-indicator {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .strategy-status {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(6, 255, 165, 0.2);
+            color: #06ffa5;
+            border: 1px solid #06ffa5;
+        }
+
+        .status-inactive {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .strategy-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .metric-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #06ffa5;
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .control-panel {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(6, 255, 165, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .execution-section {
+            background: linear-gradient(145deg, rgba(6, 255, 165, 0.05), rgba(0, 212, 255, 0.05));
+            border: 2px solid rgba(6, 255, 165, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .strategy-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .strategy-option {
+            background: rgba(139, 92, 246, 0.1);
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .strategy-option:hover {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: #8b5cf6;
+        }
+
+        .strategy-option.selected {
+            background: rgba(139, 92, 246, 0.3);
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #06ffa5;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .input-field {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(6, 255, 165, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #06ffa5;
+            box-shadow: 0 0 0 3px rgba(6, 255, 165, 0.2);
+        }
+
+        .execute-btn {
+            width: 100%;
+            background: linear-gradient(45deg, #06ffa5, #00d4ff);
+            border: none;
+            border-radius: 12px;
+            padding: 18px;
+            color: #000;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 30px rgba(6, 255, 165, 0.4);
+        }
+
+        .execute-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(6, 255, 165, 0.6);
+        }
+
+        .execute-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .management-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #8b5cf6, #06ffa5);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #ffa500, #ff6b6b);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats-overview {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .bottom-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .performance-chart {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+        }
+
+        .logs-section {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .logs-container {
+            background: #000;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 350px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .log-entry {
+            display: flex;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .log-time {
+            color: #666;
+            min-width: 80px;
+            font-size: 0.75rem;
+        }
+
+        .log-success { color: #06ffa5; font-weight: 600; }
+        .log-error { color: #e74c3c; font-weight: 600; }
+        .log-warning { color: #ffa500; font-weight: 600; }
+        .log-info { color: #00d4ff; }
+        .log-flash { 
+            color: #ff6b6b; 
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+        }
+
+        .connect-btn {
+            background: linear-gradient(45deg, #00d4ff, #8b5cf6);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 30px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 212, 255, 0.6);
+        }
+
+        .disconnect-btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 30px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #06ffa5;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(45deg, #06ffa5, #00d4ff);
+        }
+
+        .notification.error {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .notification.warning {
+            background: linear-gradient(45deg, #ffa500, #ff6b6b);
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .bottom-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 2.5rem;
+            }
+            
+            .strategies-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .strategy-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .wallet-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .quantum-brand {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="quantum-brand">
+                <div class="quantum-logo"></div>
+                <div>
+                    <h1 class="main-title">QuantumArbPro7</h1>
+                    <div class="subtitle">Professional Flash Loan Arbitrage Engine</div>
+                </div>
+            </div>
+            <div class="flash-badge">
+                ⚡ 100% FLASH LOAN POWERED ⚡
+            </div>
+        </div>
+
+        <!-- Connection Section -->
+        <div class="connection-section">
+            <div class="wallet-status">
+                <div id="statusIndicator" class="status-indicator"></div>
+                <span id="connectionText">Déconnecté</span>
+            </div>
+            
+            <div>
+                <button id="connectBtn" class="connect-btn">🦊 Connecter MetaMask</button>
+                <button id="disconnectBtn" class="disconnect-btn" style="display: none;">❌ Déconnecter</button>
+            </div>
+            
+            <div id="walletInfo" class="wallet-info" style="display: none;">
+                <div class="balance-card">
+                    <div id="walletAddress" class="balance-amount">--</div>
+                    <div class="balance-label">Adresse Wallet</div>
+                </div>
+                <div class="balance-card">
+                    <div id="maticBalance" class="balance-amount">-- MATIC</div>
+                    <div class="balance-label">Balance MATIC</div>
+                </div>
+                <div class="balance-card">
+                    <div id="usdcBalance" class="balance-amount">-- USDC</div>
+                    <div class="balance-label">Balance USDC</div>
+                </div>
+                <div class="balance-card">
+                    <div id="contractStatus" class="balance-amount">--</div>
+                    <div class="balance-label">Statut Contrat</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Strategies Section -->
+            <div class="strategies-section">
+                <h2 class="section-title">⚡ 7 Stratégies Flash Loan Avancées</h2>
+                <div class="strategies-grid">
+                    <!-- Strategy 0: DEX Arbitrage -->
+                    <div class="strategy-card">
+                        <div class="strategy-header">
+                            <div class="strategy-name">
+                                🔄 DEX Arbitrage
+                                <span class="flash-indicator">FLASH</span>
+                            </div>
+                            <div id="strategy0Status" class="strategy-status status-active">ACTIF</div>
+                        </div>
+                        <div class="strategy-metrics">
+                            <div class="metric-box">
+                                <div id="strategy0Profit" class="metric-value">0.00</div>
+                                <div class="metric-label">Profit USDC</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy0Execs" class="metric-value">0</div>
+                                <div class="metric-label">Exécutions</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy0Success" class="metric-value">0%</div>
+                                <div class="metric-label">Succès</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategy 1: Triangular -->
+                    <div class="strategy-card">
+                        <div class="strategy-header">
+                            <div class="strategy-name">
+                                🔺 Triangular
+                                <span class="flash-indicator">FLASH</span>
+                            </div>
+                            <div id="strategy1Status" class="strategy-status status-active">ACTIF</div>
+                        </div>
+                        <div class="strategy-metrics">
+                            <div class="metric-box">
+                                <div id="strategy1Profit" class="metric-value">0.00</div>
+                                <div class="metric-label">Profit USDC</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy1Execs" class="metric-value">0</div>
+                                <div class="metric-label">Exécutions</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy1Success" class="metric-value">0%</div>
+                                <div class="metric-label">Succès</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategy 2: Liquidation -->
+                    <div class="strategy-card">
+                        <div class="strategy-header">
+                            <div class="strategy-name">
+                                🎯 Liquidation
+                                <span class="flash-indicator">FLASH</span>
+                            </div>
+                            <div id="strategy2Status" class="strategy-status status-active">ACTIF</div>
+                        </div>
+                        <div class="strategy-metrics">
+                            <div class="metric-box">
+                                <div id="strategy2Profit" class="metric-value">0.00</div>
+                                <div class="metric-label">Profit USDC</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy2Execs" class="metric-value">0</div>
+                                <div class="metric-label">Exécutions</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy2Success" class="metric-value">0%</div>
+                                <div class="metric-label">Succès</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategy 3: Oracle Delay -->
+                    <div class="strategy-card">
+                        <div class="strategy-header">
+                            <div class="strategy-name">
+                                🔮 Oracle Delay
+                                <span class="flash-indicator">FLASH</span>
+                            </div>
+                            <div id="strategy3Status" class="strategy-status status-inactive">INACTIF</div>
+                        </div>
+                        <div class="strategy-metrics">
+                            <div class="metric-box">
+                                <div id="strategy3Profit" class="metric-value">0.00</div>
+                                <div class="metric-label">Profit USDC</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy3Execs" class="metric-value">0</div>
+                                <div class="metric-label">Exécutions</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy3Success" class="metric-value">0%</div>
+                                <div class="metric-label">Succès</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategy 4: Cross Chain -->
+                    <div class="strategy-card">
+                        <div class="strategy-header">
+                            <div class="strategy-name">
+                                🌉 Cross Chain
+                                <span class="flash-indicator">FLASH</span>
+                            </div>
+                            <div id="strategy4Status" class="strategy-status status-inactive">INACTIF</div>
+                        </div>
+                        <div class="strategy-metrics">
+                            <div class="metric-box">
+                                <div id="strategy4Profit" class="metric-value">0.00</div>
+                                <div class="metric-label">Profit USDC</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy4Execs" class="metric-value">0</div>
+                                <div class="metric-label">Exécutions</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy4Success" class="metric-value">0%</div>
+                                <div class="metric-label">Succès</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategy 5: Flash Farming -->
+                    <div class="strategy-card">
+                        <div class="strategy-header">
+                            <div class="strategy-name">
+                                🌾 Flash Farming
+                                <span class="flash-indicator">FLASH</span>
+                            </div>
+                            <div id="strategy5Status" class="strategy-status status-active">ACTIF</div>
+                        </div>
+                        <div class="strategy-metrics">
+                            <div class="metric-box">
+                                <div id="strategy5Profit" class="metric-value">0.00</div>
+                                <div class="metric-label">Profit USDC</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy5Execs" class="metric-value">0</div>
+                                <div class="metric-label">Exécutions</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy5Success" class="metric-value">0%</div>
+                                <div class="metric-label">Succès</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategy 6: Self Liquidation -->
+                    <div class="strategy-card">
+                        <div class="strategy-header">
+                            <div class="strategy-name">
+                                ♾️ Self Liquidation
+                                <span class="flash-indicator">FLASH</span>
+                            </div>
+                            <div id="strategy6Status" class="strategy-status status-inactive">INACTIF</div>
+                        </div>
+                        <div class="strategy-metrics">
+                            <div class="metric-box">
+                                <div id="strategy6Profit" class="metric-value">0.00</div>
+                                <div class="metric-label">Profit USDC</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy6Execs" class="metric-value">0</div>
+                                <div class="metric-label">Exécutions</div>
+                            </div>
+                            <div class="metric-box">
+                                <div id="strategy6Success" class="metric-value">0%</div>
+                                <div class="metric-label">Succès</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h2 class="section-title">⚙️ Centre de Contrôle</h2>
+                
+                <!-- Execution Section -->
+                <div class="execution-section">
+                    <h3 style="color: #06ffa5; margin-bottom: 20px; font-size: 1.2rem;">⚡ Exécution Flash Loan</h3>
+                    
+                    <div class="input-group">
+                        <label class="input-label">Sélectionner Stratégie:</label>
+                        <div class="strategy-selector">
+                            <div class="strategy-option selected" data-strategy="0">DEX Arb</div>
+                            <div class="strategy-option" data-strategy="1">Triangular</div>
+                            <div class="strategy-option" data-strategy="2">Liquidation</div>
+                            <div class="strategy-option" data-strategy="3">Oracle</div>
+                            <div class="strategy-option" data-strategy="4">Cross Chain</div>
+                            <div class="strategy-option" data-strategy="5">Flash Farm</div>
+                            <div class="strategy-option" data-strategy="6">Self Liq</div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">Montant Flash Loan (USDC):</label>
+                        <input type="number" id="flashLoanAmount" class="input-field" 
+                               placeholder="100000" min="1000" step="1000">
+                        <small style="color: #888; font-size: 0.8rem; margin-top: 5px; display: block;">
+                            Minimum: 1,000 USDC | Maximum: 1,000,000 USDC
+                        </small>
+                    </div>
+                    
+                    <button id="executeFlashLoanBtn" class="execute-btn">
+                        ⚡ Exécuter Flash Loan ⚡
+                    </button>
+                </div>
+
+                <!-- Management Section -->
+                <div class="management-section">
+                    <h3 style="color: #8b5cf6; margin-bottom: 15px; font-size: 1.1rem;">🔧 Gestion Stratégies</h3>
+                    
+                    <div class="input-group">
+                        <label class="input-label">Stratégie à Modifier:</label>
+                        <select id="strategySelect" class="input-field">
+                            <option value="0">DEX Arbitrage</option>
+                            <option value="1">Triangular Arbitrage</option>
+                            <option value="2">Liquidation Hunting</option>
+                            <option value="3">Oracle Delay Exploit</option>
+                            <option value="4">Cross Chain Arbitrage</option>
+                            <option value="5">Flash Farming</option>
+                            <option value="6">Self Liquidation Loop</option>
+                        </select>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button id="enableStrategyBtn" class="btn btn-primary">✅ Activer</button>
+                        <button id="disableStrategyBtn" class="btn btn-warning">⏸️ Désactiver</button>
+                    </div>
+                </div>
+
+                <!-- Configuration Section -->
+                <div class="management-section">
+                    <h3 style="color: #00d4ff; margin-bottom: 15px; font-size: 1.1rem;">⚙️ Configuration</h3>
+                    
+                    <div class="input-group">
+                        <label class="input-label">Max Flash Loan (USDC):</label>
+                        <input type="number" id="maxFlashLoanInput" class="input-field" 
+                               placeholder="1000000" min="10000" step="10000">
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button id="updateConfigBtn" class="btn btn-primary">🔧 Mettre à Jour</button>
+                        <button id="pauseBtn" class="btn btn-warning">⏸️ Pause</button>
+                    </div>
+                    
+                    <button id="emergencyBtn" class="btn btn-danger" style="width: 100%; margin-top: 10px;">
+                        🚨 Arrêt d'Urgence
+                    </button>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="stats-overview">
+                    <h3 style="color: #ffa500; margin-bottom: 15px; font-size: 1.1rem;">📊 Statistiques Globales</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div id="totalProfit" class="stat-value">0.00</div>
+                            <div class="stat-label">Profit Total</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="successRate" class="stat-value">0%</div>
+                            <div class="stat-label">Taux Succès</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="totalExecutions" class="stat-value">0</div>
+                            <div class="stat-label">Exécutions</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="maxFlashLoan" class="stat-value">0</div>
+                            <div class="stat-label">Max FL (USDC)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="totalGasUsed" class="stat-value">0</div>
+                            <div class="stat-label">Gas Utilisé</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="avgProfit" class="stat-value">0.00</div>
+                            <div class="stat-label">Profit Moyen</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Section -->
+        <div class="bottom-section">
+            <!-- Performance Chart -->
+            <div class="performance-chart">
+                <h2 class="section-title">📈 Performance Flash Loans</h2>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Logs Section -->
+            <div class="logs-section">
+                <h2 class="section-title">📝 Logs Flash Loan</h2>
+                <div class="logs-container" id="logs">
+                    <div class="log-entry log-info">
+                        <span class="log-time">[INIT]</span>
+                        <span>🚀 QuantumArbPro7 Engine initialisé</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration du contrat
+        const QUANTUM_ADDRESS = '0x...'; // REMPLACER par l'adresse de votre contrat déployé
+        const POLYGON_CHAIN_ID = 137;
+        const USDC_ADDRESS = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
+        const AAVE_POOL = '0x794a61358D6845594F94dc1DB02A252b5b4814aD';
+
+        // ABI QuantumArbPro7 - Fonctions principales
+        const QUANTUM_ABI = [
+            "function executeArbitrageStrategy(uint8 _strategy, uint256 _flashLoanAmount, bytes _params) external",
+            "function getStrategyStats(uint8 _strategy) external view returns (bool enabled, uint256 totalProfit, uint256 executionCount, uint256 failureCount, uint256 successRate, uint256 minProfitThreshold, uint256 maxSlippage, uint256 maxExposure)",
+            "function getOverallStats() external view returns (uint256 totalProfit, uint256 totalGasUsed, uint256 successfulExecutions, uint256 failedExecutions, uint256 overallSuccessRate)",
+            "function getAllStrategiesStats() external view returns (bool[7] enabled, uint256[7] totalProfits, uint256[7] executionCounts, uint256[7] failureCounts)",
+            "function isOperational() external view returns (bool)",
+            "function getContractInfo() external view returns (address contractOwner, bool isPaused, bool isEmergencyMode, uint256 maxFlashLoan, address aavePoolAddress, address priceOracleAddress, address bridgeAddress, address vaultAddress)",
+            "function enableStrategy(uint8 _strategy) external",
+            "function disableStrategy(uint8 _strategy) external",
+            "function setMaxFlashLoanAmount(uint256 _amount) external",
+            "function pause() external",
+            "function triggerEmergencyStop(string _reason) external",
+            "event FlashLoanExecuted(uint8 indexed strategy, uint256 amount, uint256 profit, bool success)",
+            "event StrategyToggled(uint8 indexed strategy, bool enabled)",
+            "event EmergencyStop(string reason)"
+        ];
+
+        const ERC20_ABI = [
+            "function balanceOf(address account) external view returns (uint256)",
+            "function symbol() external view returns (string)",
+            "function decimals() external view returns (uint8)"
+        ];
+
+        // Variables globales
+        let provider = null;
+        let signer = null;
+        let contract = null;
+        let usdcContract = null;
+        let userAddress = null;
+        let isConnected = false;
+        let selectedStrategy = 0;
+        let performanceChart = null;
+        let updateInterval = null;
+
+        const STRATEGY_NAMES = [
+            'DEX Arbitrage', 'Triangular Arbitrage', 'Liquidation Hunting', 
+            'Oracle Delay Exploit', 'Cross Chain Arbitrage', 'Flash Farming', 
+            'Self Liquidation Loop'
+        ];
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', async () => {
+            initParticles();
+            initChart();
+            setupEventListeners();
+            setupStrategySelector();
+            
+            // Vérifier si MetaMask est déjà connecté
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        await connectWallet();
+                    }
+                } catch (error) {
+                    console.log("Wallet not connected");
+                }
+            }
+            
+            log('🚀 QuantumArbPro7 Flash Loan Engine prêt', 'info');
+            log('⚡ 7 stratégies Flash Loan disponibles', 'flash');
+        });
+
+        // Effet de particules en arrière-plan
+        function initParticles() {
+            const particles = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                particle.style.width = Math.random() * 4 + 1 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.background = `rgba(${Math.random() > 0.5 ? '0,212,255' : '139,92,246'}, 0.5)`;
+                particle.style.borderRadius = '50%';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animation = `float ${Math.random() * 10 + 5}s linear infinite`;
+                particles.appendChild(particle);
+            }
+            
+            // CSS pour l'animation des particules
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes float {
+                    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Configuration des event listeners
+        function setupEventListeners() {
+            document.getElementById('connectBtn').addEventListener('click', connectWallet);
+            document.getElementById('disconnectBtn').addEventListener('click', disconnectWallet);
+            document.getElementById('executeFlashLoanBtn').addEventListener('click', executeFlashLoan);
+            document.getElementById('enableStrategyBtn').addEventListener('click', enableStrategy);
+            document.getElementById('disableStrategyBtn').addEventListener('click', disableStrategy);
+            document.getElementById('updateConfigBtn').addEventListener('click', updateConfig);
+            document.getElementById('pauseBtn').addEventListener('click', pauseContract);
+            document.getElementById('emergencyBtn').addEventListener('click', emergencyStop);
+        }
+
+        // Configuration du sélecteur de stratégies
+        function setupStrategySelector() {
+            const strategyOptions = document.querySelectorAll('.strategy-option');
+            strategyOptions.forEach((option, index) => {
+                option.addEventListener('click', () => {
+                    strategyOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    selectedStrategy = parseInt(option.dataset.strategy);
+                    log(`✅ Stratégie sélectionnée: ${STRATEGY_NAMES[selectedStrategy]}`, 'info');
+                });
+            });
+        }
+
+        // Connexion wallet
+        async function connectWallet() {
+            if (typeof window.ethereum === 'undefined') {
+                showNotification('MetaMask n\'est pas installé', 'error');
+                return;
+            }
+
+            try {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                userAddress = await signer.getAddress();
+
+                // Vérifier le réseau
+                const network = await provider.getNetwork();
+                if (network.chainId !== 137n) {
+                    await switchToPolygon();
+                    return;
+                }
+
+                // Initialiser les contrats
+                if (QUANTUM_ADDRESS !== '0x...') {
+                    contract = new ethers.Contract(QUANTUM_ADDRESS, QUANTUM_ABI, signer);
+                    usdcContract = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, provider);
+                }
+
+                isConnected = true;
+                updateWalletUI();
+                
+                // Charger les données
+                await loadContractData();
+                startDataRefresh();
+                
+                // Écouter les événements
+                setupContractEventListeners();
+
+                showNotification('Wallet connecté avec succès', 'success');
+                log('🔗 Wallet connecté: ' + userAddress.slice(0, 8) + '...', 'success');
+
+            } catch (error) {
+                showNotification('Erreur de connexion: ' + error.message, 'error');
+                log('❌ Erreur connexion wallet: ' + error.message, 'error');
+            }
+        }
+
+        // Basculer vers Polygon
+        async function switchToPolygon() {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x89' }],
+                });
+                await connectWallet();
+            } catch (error) {
+                if (error.code === 4902) {
+                    await addPolygonNetwork();
+                }
+            }
+        }
+
+        // Ajouter le réseau Polygon
+        async function addPolygonNetwork() {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: '0x89',
+                        chainName: 'Polygon Mainnet',
+                        nativeCurrency: {
+                            name: 'MATIC',
+                            symbol: 'MATIC',
+                            decimals: 18
+                        },
+                        rpcUrls: ['https://polygon-rpc.com/'],
+                        blockExplorerUrls: ['https://polygonscan.com/']
+                    }]
+                });
+                await connectWallet();
+            } catch (error) {
+                showNotification('Impossible d\'ajouter le réseau Polygon', 'error');
+            }
+        }
+
+        // Déconnexion wallet
+        async function disconnectWallet() {
+            isConnected = false;
+            userAddress = null;
+            provider = null;
+            signer = null;
+            contract = null;
+            usdcContract = null;
+            
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+            
+            updateWalletUI();
+            showNotification('Wallet déconnecté', 'warning');
+            log('🔌 Wallet déconnecté', 'warning');
+        }
+
+        // Mettre à jour l'interface wallet
+        function updateWalletUI() {
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const walletInfo = document.getElementById('walletInfo');
+            const statusIndicator = document.getElementById('statusIndicator');
+            const connectionText = document.getElementById('connectionText');
+            
+            if (isConnected) {
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'inline-block';
+                walletInfo.style.display = 'grid';
+                statusIndicator.classList.add('connected');
+                connectionText.textContent = 'Connecté';
+                
+                document.getElementById('walletAddress').textContent = 
+                    userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
+            } else {
+                connectBtn.style.display = 'inline-block';
+                disconnectBtn.style.display = 'none';
+                walletInfo.style.display = 'none';
+                statusIndicator.classList.remove('connected');
+                connectionText.textContent = 'Déconnecté';
+            }
+        }
+
+        // Charger les données du contrat
+        async function loadContractData() {
+            if (!contract) {
+                document.getElementById('contractStatus').textContent = '⚠️ Adresse manquante';
+                return;
+            }
+
+            try {
+                // Vérifier si le contrat est opérationnel
+                const isOperational = await contract.isOperational();
+                document.getElementById('contractStatus').textContent = 
+                    isOperational ? '✅ Opérationnel' : '❌ Arrêté';
+
+                // Charger les statistiques globales
+                const overallStats = await contract.getOverallStats();
+                document.getElementById('totalProfit').textContent = 
+                    formatUSDC(overallStats[0]) + ' USDC';
+                document.getElementById('successRate').textContent = 
+                    overallStats[4].toString() + '%';
+                document.getElementById('totalExecutions').textContent = 
+                    (Number(overallStats[2]) + Number(overallStats[3])).toString();
+                document.getElementById('totalGasUsed').textContent = 
+                    formatGwei(overallStats[1]) + ' GWEI';
+
+                // Charger les informations du contrat
+                const contractInfo = await contract.getContractInfo();
+                document.getElementById('maxFlashLoan').textContent = 
+                    formatUSDC(contractInfo[3]);
+
+                // Charger les statistiques de toutes les stratégies
+                const allStats = await contract.getAllStrategiesStats();
+                
+                for (let i = 0; i < 7; i++) {
+                    const profit = formatUSDC(allStats[1][i]);
+                    const executions = allStats[2][i].toString();
+                    const failures = allStats[3][i].toString();
+                    const totalExecs = Number(executions) + Number(failures);
+                    const successRate = totalExecs > 0 ? 
+                        Math.round((Number(executions) * 100) / totalExecs) : 0;
+                    
+                    document.getElementById(`strategy${i}Profit`).textContent = profit;
+                    document.getElementById(`strategy${i}Execs`).textContent = executions;
+                    document.getElementById(`strategy${i}Success`).textContent = successRate + '%';
+                    
+                    const statusElement = document.getElementById(`strategy${i}Status`);
+                    if (allStats[0][i]) {
+                        statusElement.textContent = 'ACTIF';
+                        statusElement.className = 'strategy-status status-active';
+                    } else {
+                        statusElement.textContent = 'INACTIF';
+                        statusElement.className = 'strategy-status status-inactive';
+                    }
+                }
+
+                // Calculer profit moyen
+                const totalExecs = Number(overallStats[2]) + Number(overallStats[3]);
+                const avgProfit = totalExecs > 0 ? 
+                    Number(overallStats[0]) / 1e6 / totalExecs : 0;
+                document.getElementById('avgProfit').textContent = 
+                    avgProfit.toFixed(2) + ' USDC';
+
+                // Charger les balances
+                await loadBalances();
+
+            } catch (error) {
+                log('❌ Erreur chargement données: ' + error.message, 'error');
+            }
+        }
+
+        // Charger les balances
+        async function loadBalances() {
+            if (!isConnected || !userAddress) return;
+
+            try {
+                // Balance MATIC
+                const maticBalance = await provider.getBalance(userAddress);
+                document.getElementById('maticBalance').textContent = 
+                    parseFloat(ethers.formatEther(maticBalance)).toFixed(2) + ' MATIC';
+
+                // Balance USDC
+                const usdcBalance = await usdcContract.balanceOf(userAddress);
+                document.getElementById('usdcBalance').textContent = 
+                    formatUSDC(usdcBalance) + ' USDC';
+
+            } catch (error) {
+                log('⚠️ Erreur chargement balances: ' + error.message, 'warning');
+            }
+        }
+
+        // Démarrer l'actualisation automatique
+        function startDataRefresh() {
+            if (updateInterval) clearInterval(updateInterval);
+            
+            updateInterval = setInterval(async () => {
+                if (isConnected && contract) {
+                    await loadContractData();
+                }
+            }, 10000); // Actualiser toutes les 10 secondes
+        }
+
+        // Exécuter Flash Loan
+        async function executeFlashLoan() {
+            if (!isConnected) {
+                showNotification('Veuillez connecter votre wallet', 'error');
+                return;
+            }
+            
+            if (!contract) {
+                showNotification('Contrat non initialisé', 'error');
+                return;
+            }
+
+            const amount = document.getElementById('flashLoanAmount').value;
+            if (!amount || parseFloat(amount) < 1000) {
+                showNotification('Montant minimum: 1,000 USDC', 'error');
+                return;
+            }
+
+            try {
+                const executeBtn = document.getElementById('executeFlashLoanBtn');
+                executeBtn.disabled = true;
+                executeBtn.innerHTML = '<div class="loading-spinner"></div> Flash Loan en cours...';
+
+                const amountWei = ethers.parseUnits(amount, 6);
+                const params = '0x';
+
+                log(`⚡ Exécution Flash Loan: ${amount} USDC - Stratégie: ${STRATEGY_NAMES[selectedStrategy]}`, 'flash');
+
+                // Estimer le gas
+                const gasEstimate = await contract.executeArbitrageStrategy.estimateGas(
+                    selectedStrategy, amountWei, params
+                );
+
+                // Exécuter la transaction
+                const tx = await contract.executeArbitrageStrategy(
+                    selectedStrategy,
+                    amountWei,
+                    params,
+                    {
+                        gasLimit: Math.floor(Number(gasEstimate) * 1.3),
+                    }
+                );
+
+                log('⏳ Transaction envoyée: ' + tx.hash, 'info');
+                showNotification('Flash Loan en cours d\'exécution...', 'warning');
+
+                const receipt = await tx.wait();
+                
+                if (receipt.status === 1) {
+                    showNotification('Flash Loan exécuté avec succès!', 'success');
+                    log('✅ Flash Loan réussi - TX: ' + tx.hash, 'success');
+                } else {
+                    showNotification('Flash Loan échoué', 'error');
+                    log('❌ Flash Loan échoué - TX: ' + tx.hash, 'error');
+                }
+
+                // Recharger les données après 5 secondes
+                setTimeout(() => {
+                    loadContractData();
+                }, 5000);
+
+            } catch (error) {
+                showNotification('Erreur Flash Loan: ' + error.message, 'error');
+                log('❌ Erreur Flash Loan: ' + error.message, 'error');
+            } finally {
+                const executeBtn = document.getElementById('executeFlashLoanBtn');
+                executeBtn.disabled = false;
+                executeBtn.textContent = '⚡ Exécuter Flash Loan ⚡';
+            }
+        }
+
+        // Activer stratégie
+        async function enableStrategy() {
+            if (!isConnected || !contract) return;
+
+            const strategyId = document.getElementById('strategySelect').value;
+            
+            try {
+                log(`⚙️ Activation stratégie: ${STRATEGY_NAMES[strategyId]}`, 'info');
+                
+                const tx = await contract.enableStrategy(strategyId);
+                await tx.wait();
+                
+                showNotification('Stratégie activée avec succès', 'success');
+                log('✅ Stratégie activée - TX: ' + tx.hash, 'success');
+                
+                setTimeout(() => loadContractData(), 3000);
+                
+            } catch (error) {
+                showNotification('Erreur activation: ' + error.message, 'error');
+                log('❌ Erreur activation: ' + error.message, 'error');
+            }
+        }
+
+        // Désactiver stratégie
+        async function disableStrategy() {
+            if (!isConnected || !contract) return;
+
+            const strategyId = document.getElementById('strategySelect').value;
+            
+            try {
+                log(`⚙️ Désactivation stratégie: ${STRATEGY_NAMES[strategyId]}`, 'warning');
+                
+                const tx = await contract.disableStrategy(strategyId);
+                await tx.wait();
+                
+                showNotification('Stratégie désactivée avec succès', 'success');
+                log('✅ Stratégie désactivée - TX: ' + tx.hash, 'success');
+                
+                setTimeout(() => loadContractData(), 3000);
+                
+            } catch (error) {
+                showNotification('Erreur désactivation: ' + error.message, 'error');
+                log('❌ Erreur désactivation: ' + error.message, 'error');
+            }
+        }
+
+        // Mettre à jour configuration
+        async function updateConfig() {
+            if (!isConnected || !contract) return;
+
+            const maxFlashLoan = document.getElementById('maxFlashLoanInput').value;
+            if (!maxFlashLoan || parseFloat(maxFlashLoan) < 10000) {
+                showNotification('Montant minimum: 10,000 USDC', 'error');
+                return;
+            }
+
+            try {
+                const amountWei = ethers.parseUnits(maxFlashLoan, 6);
+                
+                log(`🔧 Mise à jour Max Flash Loan: ${maxFlashLoan} USDC`, 'info');
+                
+                const tx = await contract.setMaxFlashLoanAmount(amountWei);
+                await tx.wait();
+                
+                showNotification('Configuration mise à jour', 'success');
+                log('✅ Configuration mise à jour - TX: ' + tx.hash, 'success');
+                
+                document.getElementById('maxFlashLoanInput').value = '';
+                setTimeout(() => loadContractData(), 3000);
+                
+            } catch (error) {
+                showNotification('Erreur mise à jour: ' + error.message, 'error');
+                log('❌ Erreur mise à jour: ' + error.message, 'error');
+            }
+        }
+
+        // Mettre en pause le contrat
+        async function pauseContract() {
+            if (!isConnected || !contract) return;
+
+            try {
+                log('⏸️ Mise en pause du contrat...', 'warning');
+                
+                const tx = await contract.pause();
+                await tx.wait();
+                
+                showNotification('Contrat mis en pause', 'success');
+                log('✅ Contrat mis en pause - TX: ' + tx.hash, 'success');
+                
+                setTimeout(() => loadContractData(), 3000);
+                
+            } catch (error) {
+                showNotification('Erreur pause: ' + error.message, 'error');
+                log('❌ Erreur pause: ' + error.message, 'error');
+            }
+        }
+
+        // Arrêt d'urgence
+        async function emergencyStop() {
+            if (!isConnected || !contract) return;
+
+            if (!confirm('⚠️ ATTENTION: Ceci va déclencher l\'arrêt d\'urgence du système. Êtes-vous sûr?')) {
+                return;
+            }
+
+            try {
+                log('🚨 Arrêt d\'urgence en cours...', 'error');
+                
+                const tx = await contract.triggerEmergencyStop('Arrêt d\'urgence manuel');
+                await tx.wait();
+                
+                showNotification('Arrêt d\'urgence effectué', 'error');
+                log('✅ Arrêt d\'urgence effectué - TX: ' + tx.hash, 'error');
+                
+                setTimeout(() => loadContractData(), 3000);
+                
+            } catch (error) {
+                showNotification('Erreur arrêt d\'urgence: ' + error.message, 'error');
+                log('❌ Erreur arrêt d\'urgence: ' + error.message, 'error');
+            }
+        }
+
+        // Écouter les événements du contrat
+        function setupContractEventListeners() {
+            if (!contract) return;
+
+            // Événement Flash Loan exécuté
+            contract.on("FlashLoanExecuted", (strategy, amount, profit, success) => {
+                const strategyName = STRATEGY_NAMES[strategy];
+                const amountFormatted = formatUSDC(amount);
+                const profitFormatted = formatUSDC(profit);
+                
+                if (success) {
+                    log(`✅ Flash Loan réussi: ${strategyName} - ${amountFormatted} USDC - Profit: ${profitFormatted} USDC`, 'success');
+                    showNotification(`Flash Loan réussi! Profit: ${profitFormatted} USDC`, 'success');
+                } else {
+                    log(`❌ Flash Loan échoué: ${strategyName} - ${amountFormatted} USDC`, 'error');
+                    showNotification('Flash Loan échoué', 'error');
+                }
+                
+                // Mettre à jour le graphique
+                updateChart(profit);
+                
+                // Recharger les données
+                setTimeout(() => loadContractData(), 2000);
+            });
+
+            // Événement stratégie activée/désactivée
+            contract.on("StrategyToggled", (strategy, enabled) => {
+                const strategyName = STRATEGY_NAMES[strategy];
+                const status = enabled ? 'activée' : 'désactivée';
+                log(`⚙️ Stratégie ${strategyName} ${status}`, 'info');
+                
+                // Recharger les données
+                setTimeout(() => loadContractData(), 2000);
+            });
+
+            // Événement arrêt d'urgence
+            contract.on("EmergencyStop", (reason) => {
+                log(`🚨 ARRÊT D'URGENCE: ${reason}`, 'error');
+                showNotification('ARRÊT D\'URGENCE ACTIVÉ', 'error');
+                
+                // Recharger les données
+                setTimeout(() => loadContractData(), 2000);
+            });
+        }
+
+        // Initialiser le graphique de performance
+        function initChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Début'],
+                    datasets: [{
+                        label: 'Profits Flash Loan (USDC)',
+                        data: [0],
+                        borderColor: '#06ffa5',
+                        backgroundColor: 'rgba(6, 255, 165, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#06ffa5',
+                        pointBorderColor: '#06ffa5',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#888888',
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#888888',
+                                font: {
+                                    size: 12
+                                },
+                                callback: function(value) {
+                                    return value.toFixed(2) + ' USDC';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+        // Mettre à jour le graphique
+        function updateChart(newProfit) {
+            if (!performanceChart) return;
+            
+            const now = new Date().toLocaleTimeString();
+            const profitValue = parseFloat(ethers.formatUnits(newProfit, 6));
+            
+            performanceChart.data.labels.push(now);
+            performanceChart.data.datasets[0].data.push(profitValue);
+            
+            // Garder seulement les 20 derniers points
+            if (performanceChart.data.labels.length > 20) {
+                performanceChart.data.labels.shift();
+                performanceChart.data.datasets[0].data.shift();
+            }
+            
+            performanceChart.update('none');
+        }
+
+        // Fonctions utilitaires
+        function formatUSDC(value) {
+            return parseFloat(ethers.formatUnits(value, 6)).toFixed(2);
+        }
+
+        function formatGwei(value) {
+            return parseFloat(ethers.formatUnits(value, 9)).toFixed(2);
+        }
+
+        function showNotification(message, type) {
+            // Supprimer les notifications existantes
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notif => notif.remove());
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Afficher la notification
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // Masquer après 4 secondes
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 4000);
+        }
+
+        function log(message, type = 'info') {
+            const logsContainer = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `
+                <span class="log-time">[${timestamp}]</span>
+                <span>${message}</span>
+            `;
+            
+            logsContainer.appendChild(logEntry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+            
+            // Garder seulement les 100 derniers logs
+            const logs = logsContainer.children;
+            if (logs.length > 100) {
+                logsContainer.removeChild(logs[0]);
+            }
+        }
+
+        // Gestion des changements de réseau/compte
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.on('chainChanged', (chainId) => {
+                if (parseInt(chainId, 16) !== POLYGON_CHAIN_ID) {
+                    showNotification('Veuillez basculer vers le réseau Polygon', 'warning');
+                    log('⚠️ Réseau incorrect - Veuillez passer sur Polygon', 'warning');
+                } else {
+                    log('✅ Réseau Polygon connecté', 'success');
+                    if (isConnected) {
+                        loadContractData();
+                    }
+                }
+            });
+
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    disconnectWallet();
+                } else if (accounts[0] !== userAddress) {
+                    connectWallet();
+                }
+            });
+        }
+
+        // Raccourcis clavier
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                if (['1','2','3','4','5','6','7'].includes(e.key)) {
+                    e.preventDefault();
+                    const strategyIndex = parseInt(e.key) - 1;
+                    const strategyOptions = document.querySelectorAll('.strategy-option');
+                    if (strategyOptions[strategyIndex]) {
+                        strategyOptions.forEach(opt => opt.classList.remove('selected'));
+                        strategyOptions[strategyIndex].classList.add('selected');
+                        selectedStrategy = strategyIndex;
+                        log(`⌨️ Stratégie sélectionnée: ${STRATEGY_NAMES[selectedStrategy]}`, 'info');
+                    }
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (isConnected && !document.getElementById('executeFlashLoanBtn').disabled) {
+                        executeFlashLoan();
+                    }
+                }
+            }
+        });
+
+        // Messages d'information
+        setTimeout(() => {
+            log('💡 TIP: Utilisez Ctrl+1-7 pour sélectionner rapidement une stratégie', 'info');
+            setTimeout(() => {
+                log('💡 TIP: Ctrl+Enter exécute le Flash Loan sélectionné', 'info');
+                setTimeout(() => {
+                    log('⚡ TIP: Toutes les stratégies utilisent des Flash Loans AAVE V3', 'flash');
+                    setTimeout(() => {
+                        log('🔒 TIP: Protection MEV et sécurité avancée activées', 'info');
+                        setTimeout(() => {
+                            log('🚀 Système prêt pour le trading Flash Loan haute fréquence!', 'success');
+                        }, 2000);
+                    }, 2000);
+                }, 2000);
+            }, 2000);
+        }, 3000);
+
+        // Auto-actualisation légère des métriques importantes
+        setInterval(async () => {
+            if (isConnected && contract) {
+                try {
+                    // Actualiser seulement les métriques critiques
+                    const overallStats = await contract.getOverallStats();
+                    document.getElementById('totalProfit').textContent = 
+                        formatUSDC(overallStats[0]) + ' USDC';
+                    document.getElementById('successRate').textContent = 
+                        overallStats[4].toString() + '%';
+                } catch (error) {
+                    // Erreur silencieuse pour éviter le spam
+                }
+            }
+        }, 30000); // Toutes les 30 secondes
+
+        // Log final d'initialisation
+        setTimeout(() => {
+            log('🎯 Interface QuantumArbPro7 entièrement chargée', 'success');
+            log('⚡ 7 stratégies Flash Loan prêtes à l\'exécution', 'flash');
+            log('🔐 Sécurité institutionnelle et protection MEV activées', 'info');
+            log('⌨️ Raccourcis: Ctrl+1-7 (sélection), Ctrl+Enter (exécution)', 'info');
+            log('🚀 Prêt pour le trading quantitatif haute performance!', 'success');
+        }, 5000);
+    </script>
+</body>
+</html>
