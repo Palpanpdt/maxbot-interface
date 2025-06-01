@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WealthBuilder - Capital Auto-Croissant</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .wallet-section {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .wallet-address {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid #00d4ff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .network-indicator {
+            background: rgba(137, 99, 210, 0.2);
+            border: 1px solid #8963d2;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .network-dot {
+            width: 8px;
+            height: 8px;
+            background: #8963d2;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #00d4ff;
+        }
+
+        .capital-display {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .capital-amount {
+            font-size: 36px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .capital-growth {
+            font-size: 14px;
+            color: #00ff88;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .strategy-buttons {
+            display: grid;
+            gap: 15px;
+        }
+
+        .strategy-btn {
+            background: linear-gradient(45deg, #8963d2, #00d4ff);
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .strategy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(137, 99, 210, 0.3);
+        }
+
+        .strategy-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .input-field {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+        }
+
+        .deposit-section {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
+        }
+
+        .deposit-btn {
+            background: linear-gradient(45deg, #00ff88, #00d4ff);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .opportunities-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .opportunity-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .opportunity-profit {
+            color: #00ff88;
+            font-weight: 600;
+        }
+
+        .opportunity-type {
+            font-size: 12px;
+            color: #00d4ff;
+            text-transform: uppercase;
+        }
+
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .security-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .security-dot {
+            width: 12px;
+            height: 12px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .activity-log {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+        }
+
+        .log-time {
+            color: #888;
+            font-size: 11px;
+        }
+
+        .connect-wallet-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .error-message {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00d4ff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .wallet-section {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">WealthBuilder</div>
+            <div class="wallet-section">
+                <div class="network-indicator">
+                    <div class="network-dot"></div>
+                    Polygon Mainnet
+                </div>
+                <div id="walletAddress" class="wallet-address">Non connecté</div>
+                <button id="connectWallet" class="connect-wallet-btn">Connecter Wallet</button>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Capital Overview -->
+            <div class="card">
+                <div class="card-title">Capital Total</div>
+                <div class="capital-display">
+                    <div id="capitalAmount" class="capital-amount">0.00 USDC</div>
+                    <div id="capitalGrowth" class="capital-growth">+0.00% de croissance</div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Capital Initial</div>
+                        <div id="initialCapital" class="stat-value">0.00</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Profits Totaux</div>
+                        <div id="totalProfits" class="stat-value">0.00</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Capital Disponible</div>
+                        <div id="availableCapital" class="stat-value">0.00</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Trades Réussis</div>
+                        <div id="successRate" class="stat-value">0%</div>
+                    </div>
+                </div>
+                
+                <div class="deposit-section">
+                    <div class="input-group">
+                        <label class="input-label">Déposer des fonds (USDC)</label>
+                        <input type="number" id="depositAmount" class="input-field" placeholder="Montant en USDC" min="0" step="0.01">
+                    </div>
+                    <button id="depositBtn" class="deposit-btn">Déposer</button>
+                </div>
+            </div>
+
+            <!-- Strategies -->
+            <div class="card">
+                <div class="card-title">Stratégies de Trading</div>
+                
+                <div class="input-group">
+                    <label class="input-label">Montant pour trading (USDC)</label>
+                    <input type="number" id="tradeAmount" class="input-field" placeholder="Montant" min="10" step="0.01">
+                </div>
+
+                <div class="strategy-buttons">
+                    <button id="arbitrageBtn" class="strategy-btn">
+                        🔄 Arbitrage DEX
+                        <div style="font-size: 12px; margin-top: 5px;">QuickSwap ↔ SushiSwap</div>
+                    </button>
+                    
+                    <button id="liquidationBtn" class="strategy-btn">
+                        ⚡ Liquidations Aave
+                        <div style="font-size: 12px; margin-top: 5px;">Bonus 5-10%</div>
+                    </button>
+                    
+                    <button id="multidexBtn" class="strategy-btn">
+                        🎯 Multi-DEX Trading
+                        <div style="font-size: 12px; margin-top: 5px;">Meilleur prix automatique</div>
+                    </button>
+                </div>
+
+                <div id="strategyStatus"></div>
+            </div>
+
+            <!-- Opportunities Scanner -->
+            <div class="card">
+                <div class="card-title">Scanner d'Opportunités</div>
+                
+                <div class="security-status">
+                    <div class="security-dot"></div>
+                    <span>Marché sécurisé - Trading actif</span>
+                </div>
+
+                <div class="opportunities-list" id="opportunitiesList">
+                    <div class="opportunity-item">
+                        <div class="opportunity-type">Arbitrage</div>
+                        <div>USDC/WMATIC</div>
+                        <div class="opportunity-profit">Scanning...</div>
+                    </div>
+                </div>
+
+                <div class="stats-grid" style="margin-top: 20px;">
+                    <div class="stat-item">
+                        <div class="stat-label">Arbitrage</div>
+                        <div id="arbStats" class="stat-value">0 trades</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Liquidations</div>
+                        <div id="liqStats" class="stat-value">0 trades</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Grid -->
+        <div class="bottom-grid">
+            <!-- Performance Chart -->
+            <div class="card">
+                <div class="card-title">Performance du Capital</div>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="card">
+                <div class="card-title">Activité Récente</div>
+                <div class="activity-log" id="activityLog">
+                    <div class="log-item">
+                        <div>Système initialisé</div>
+                        <div class="log-time">Maintenant</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration du contrat
+        const CONTRACT_ADDRESS = "0x..."; // Adresse de votre contrat déployé
+        const CONTRACT_ABI = [
+            // ABI de votre contrat WealthBuilder
+            "function deposit(uint256 amount) external",
+            "function executeArbitrage(uint256 amountIn) external",
+            "function executeLiquidation(address user, address collateralAsset, address debtAsset, uint256 debtAmount) external",
+            "function executeMultidex(address tokenIn, address tokenOut, uint256 amountIn) external",
+            "function getCapitalInfo() external view returns (uint256, uint256, uint256, uint256, uint256)",
+            "function getStrategyStats() external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256)",
+            "function checkArbitrageOpportunity(uint256 amountIn) external view returns (bool, uint256, string)",
+            "function getBalances() external view returns (uint256, uint256)",
+            "function pause() external",
+            "function unpause() external",
+            "function withdraw(uint256 amount) external"
+        ];
+
+        const USDC_ADDRESS = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
+        const USDC_ABI = [
+            "function approve(address spender, uint256 amount) external returns (bool)",
+            "function balanceOf(address account) external view returns (uint256)",
+            "function transfer(address to, uint256 amount) external returns (bool)"
+        ];
+
+        // Variables globales
+        let provider = null;
+        let signer = null;
+        let contract = null;
+        let usdcContract = null;
+        let userAddress = null;
+        let performanceChart = null;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', async () => {
+            initChart();
+            setupEventListeners();
+            
+            // Vérifier si MetaMask est déjà connecté
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        await connectWallet();
+                    }
+                } catch (error) {
+                    console.log("Wallet not connected");
+                }
+            }
+        });
+
+        // Configuration des event listeners
+        function setupEventListeners() {
+            document.getElementById('connectWallet').addEventListener('click', connectWallet);
+            document.getElementById('depositBtn').addEventListener('click', depositFunds);
+            document.getElementById('arbitrageBtn').addEventListener('click', () => executeStrategy('arbitrage'));
+            document.getElementById('liquidationBtn').addEventListener('click', () => executeStrategy('liquidation'));
+            document.getElementById('multidexBtn').addEventListener('click', () => executeStrategy('multidex'));
+        }
+
+        // Connexion wallet
+        async function connectWallet() {
+            if (typeof window.ethereum === 'undefined') {
+                showError('MetaMask n\'est pas installé');
+                return;
+            }
+
+            try {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                userAddress = await signer.getAddress();
+
+                // Vérifier le réseau
+                const network = await provider.getNetwork();
+                if (network.chainId !== 137n) {
+                    await switchToPolygon();
+                    return;
+                }
+
+                // Initialiser les contrats
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
+
+                // Mettre à jour l'interface
+                document.getElementById('walletAddress').textContent = 
+                    userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
+                document.getElementById('connectWallet').textContent = 'Connecté';
+                document.getElementById('connectWallet').disabled = true;
+
+                // Charger les données
+                await loadContractData();
+                startDataRefresh();
+                startOpportunityScanner();
+
+                showSuccess('Wallet connecté avec succès');
+                addLog('Wallet connecté: ' + userAddress.slice(0, 10) + '...');
+
+            } catch (error) {
+                showError('Erreur de connexion: ' + error.message);
+            }
+        }
+
+        // Basculer vers Polygon
+        async function switchToPolygon() {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x89' }], // Polygon Mainnet
+                });
+                await connectWallet();
+            } catch (error) {
+                if (error.code === 4902) {
+                    await addPolygonNetwork();
+                }
+            }
+        }
+
+        // Ajouter le réseau Polygon
+        async function addPolygonNetwork() {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: '0x89',
+                        chainName: 'Polygon Mainnet',
+                        nativeCurrency: {
+                            name: 'MATIC',
+                            symbol: 'MATIC',
+                            decimals: 18
+                        },
+                        rpcUrls: ['https://polygon-rpc.com/'],
+                        blockExplorerUrls: ['https://polygonscan.com/']
+                    }]
+                });
+                await connectWallet();
+            } catch (error) {
+                showError('Impossible d\'ajouter le réseau Polygon');
+            }
+        }
+
+        // Charger les données du contrat
+        async function loadContractData() {
+            if (!contract) return;
+
+            try {
+                // Informations sur le capital
+                const capitalInfo = await contract.getCapitalInfo();
+                const [initial, current, profits, available, growth] = capitalInfo;
+
+                document.getElementById('capitalAmount').textContent = 
+                    formatUSDC(current) + ' USDC';
+                document.getElementById('capitalGrowth').textContent = 
+                    '+' + formatNumber(growth) + '% de croissance';
+                document.getElementById('initialCapital').textContent = 
+                    formatUSDC(initial);
+                document.getElementById('totalProfits').textContent = 
+                    formatUSDC(profits);
+                document.getElementById('availableCapital').textContent = 
+                    formatUSDC(available);
+
+                // Statistiques des stratégies
+                const strategyStats = await contract.getStrategyStats();
+                const [arbTrades, liqTrades, multiTrades, arbProfits, liqProfits, multiProfits, totalTrades, successRate] = strategyStats;
+
+                document.getElementById('successRate').textContent = 
+                    formatNumber(successRate) + '%';
+                document.getElementById('arbStats').textContent = 
+                    formatNumber(arbTrades) + ' trades';
+                document.getElementById('liqStats').textContent = 
+                    formatNumber(liqTrades) + ' trades';
+
+                // Mettre à jour le graphique
+                updateChart(current);
+
+            } catch (error) {
+                console.error('Erreur lors du chargement des données:', error);
+            }
+        }
+
+        // Déposer des fonds
+        async function depositFunds() {
+            if (!contract || !usdcContract) {
+                showError('Contrat non initialisé');
+                return;
+            }
+
+            const amount = document.getElementById('depositAmount').value;
+            if (!amount || parseFloat(amount) <= 0) {
+                showError('Montant invalide');
+                return;
+            }
+
+            try {
+                const amountWei = ethers.parseUnits(amount, 6); // USDC a 6 décimales
+                
+                // Vérifier le solde
+                const balance = await usdcContract.balanceOf(userAddress);
+                if (balance < amountWei) {
+                    showError('Solde USDC insuffisant');
+                    return;
+                }
+
+                document.getElementById('depositBtn').innerHTML = '<div class="loading"></div> Traitement...';
+                document.getElementById('depositBtn').disabled = true;
+
+                // Approuver le contrat
+                const approveTx = await usdcContract.approve(CONTRACT_ADDRESS, amountWei);
+                await approveTx.wait();
+
+                // Effectuer le dépôt
+                const depositTx = await contract.deposit(amountWei);
+                await depositTx.wait();
+
+                showSuccess(`Dépôt de ${amount} USDC effectué avec succès`);
+                addLog(`Dépôt: +${amount} USDC`);
+                
+                document.getElementById('depositAmount').value = '';
+                await loadContractData();
+
+            } catch (error) {
+                showError('Erreur lors du dépôt: ' + error.message);
+            } finally {
+                document.getElementById('depositBtn').innerHTML = 'Déposer';
+                document.getElementById('depositBtn').disabled = false;
+            }
+        }
+
+        // Exécuter une stratégie
+        async function executeStrategy(strategyType) {
+            if (!contract) {
+                showError('Contrat non initialisé');
+                return;
+            }
+
+            const amount = document.getElementById('tradeAmount').value;
+            if (!amount || parseFloat(amount) < 10) {
+                showError('Montant minimum: 10 USDC');
+                return;
+            }
+
+            try {
+                const amountWei = ethers.parseUnits(amount, 6);
+                let tx;
+                let buttonId;
+
+                switch (strategyType) {
+                    case 'arbitrage':
+                        buttonId = 'arbitrageBtn';
+                        document.getElementById(buttonId).innerHTML = '<div class="loading"></div> Arbitrage...';
+                        tx = await contract.executeArbitrage(amountWei);
+                        break;
+                    
+                    case 'liquidation':
+                        buttonId = 'liquidationBtn';
+                        showError('Liquidation manuelle non implémentée dans cette interface');
+                        return;
+                    
+                    case 'multidex':
+                        buttonId = 'multidexBtn';
+                        document.getElementById(buttonId).innerHTML = '<div class="loading"></div> Multi-DEX...';
+                        // Pour cet exemple, nous utilisons USDC vers WMATIC
+                        tx = await contract.executeMultidex(
+                            USDC_ADDRESS, 
+                            "0x0d500B1D8E8E53de6Ec5cB567F8Eff95819347C0", // WMATIC
+                            amountWei
+                        );
+                        break;
+                }
+
+                document.getElementById(buttonId).disabled = true;
+                await tx.wait();
+
+                showSuccess(`Stratégie ${strategyType} exécutée avec succès`);
+                addLog(`${strategyType}: ${amount} USDC`);
+                
+                await loadContractData();
+
+            } catch (error) {
+                showError(`Erreur ${strategyType}: ` + error.message);
+            } finally {
+                // Restaurer les boutons
+                setTimeout(() => {
+                    document.getElementById('arbitrageBtn').innerHTML = '🔄 Arbitrage DEX<div style="font-size: 12px; margin-top: 5px;">QuickSwap ↔ SushiSwap</div>';
+                    document.getElementById('multidexBtn').innerHTML = '🎯 Multi-DEX Trading<div style="font-size: 12px; margin-top: 5px;">Meilleur prix automatique</div>';
+                    document.getElementById('arbitrageBtn').disabled = false;
+                    document.getElementById('multidexBtn').disabled = false;
+                }, 2000);
+            }
+        }
+
+        // Scanner d'opportunités
+        async function scanOpportunities() {
+            if (!contract) return;
+
+            try {
+                const testAmount = ethers.parseUnits("100", 6); // 100 USDC de test
+                const opportunity = await contract.checkArbitrageOpportunity(testAmount);
+                const [profitable, expectedProfit, status] = opportunity;
+
+                const opportunitiesList = document.getElementById('opportunitiesList');
+                opportunitiesList.innerHTML = `
+                    <div class="opportunity-item">
+                        <div class="opportunity-type">Arbitrage USDC/WMATIC</div>
+                        <div>Status: ${status}</div>
+                        <div class="opportunity-profit">
+                            ${profitable ? '+' + formatUSDC(expectedProfit) + ' USDC' : 'Aucun profit'}
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Erreur scan opportunités:', error);
+            }
+        }
+
+        // Démarrer le scanner d'opportunités
+        function startOpportunityScanner() {
+            scanOpportunities();
+            setInterval(scanOpportunities, 10000); // Scan toutes les 10 secondes
+        }
+
+        // Actualisation des données
+        function startDataRefresh() {
+            setInterval(loadContractData, 5000); // Actualiser toutes les 5 secondes
+        }
+
+        // Initialiser le graphique
+        function initChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Début'],
+                    datasets: [{
+                        label: 'Capital (USDC)',
+                        data: [0],
+                        borderColor: '#00d4ff',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#888888'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#888888',
+                                callback: function(value) {
+                                    return value.toFixed(2) + ' USDC';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Mettre à jour le graphique
+        function updateChart(newCapital) {
+            if (!performanceChart) return;
+            
+            const now = new Date().toLocaleTimeString();
+            const capitalValue = parseFloat(ethers.formatUnits(newCapital, 6));
+            
+            performanceChart.data.labels.push(now);
+            performanceChart.data.datasets[0].data.push(capitalValue);
+            
+            // Garder seulement les 20 derniers points
+            if (performanceChart.data.labels.length > 20) {
+                performanceChart.data.labels.shift();
+                performanceChart.data.datasets[0].data.shift();
+            }
+            
+            performanceChart.update();
+        }
+
+        // Fonctions utilitaires
+        function formatUSDC(value) {
+            return parseFloat(ethers.formatUnits(value, 6)).toFixed(2);
+        }
+
+        function formatNumber(value) {
+            return parseFloat(ethers.formatUnits(value, 0)).toFixed(2);
+        }
+
+        function showError(message) {
+            const statusDiv = document.getElementById('strategyStatus');
+            statusDiv.innerHTML = `<div class="error-message">${message}</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const statusDiv = document.getElementById('strategyStatus');
+            statusDiv.innerHTML = `<div class="success-message">${message}</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function addLog(message) {
+            const logDiv = document.getElementById('activityLog');
+            const now = new Date().toLocaleTimeString();
+            
+            const logItem = document.createElement('div');
+            logItem.className = 'log-item';
+            logItem.innerHTML = `
+                <div>${message}</div>
+                <div class="log-time">${now}</div>
+            `;
+            
+            logDiv.insertBefore(logItem, logDiv.firstChild);
+            
+            // Garder seulement les 10 derniers logs
+            while (logDiv.children.length > 10) {
+                logDiv.removeChild(logDiv.lastChild);
+            }
+        }
+
+        // Gestion des événements du contrat
+        function setupContractEventListeners() {
+            if (!contract) return;
+
+            // Écouter les événements de dépôt
+            contract.on("FundsDeposited", (amount, newCapital) => {
+                addLog(`Fonds déposés: +${formatUSDC(amount)} USDC`);
+                loadContractData();
+            });
+
+            // Écouter les événements d'arbitrage
+            contract.on("ArbitrageExecuted", (amountIn, profit) => {
+                addLog(`Arbitrage réussi: +${formatUSDC(profit)} USDC de profit`);
+                loadContractData();
+            });
+
+            // Écouter les événements de liquidation
+            contract.on("LiquidationExecuted", (user, bonus) => {
+                addLog(`Liquidation réussie: +${formatUSDC(bonus)} USDC de bonus`);
+                loadContractData();
+            });
+
+            // Écouter les événements multi-DEX
+            contract.on("MultidexExecuted", (amountIn, profit) => {
+                addLog(`Multi-DEX réussi: +${formatUSDC(profit)} USDC de profit`);
+                loadContractData();
+            });
+
+            // Écouter les événements de croissance du capital
+            contract.on("CapitalGrowth", (oldCapital, newCapital) => {
+                const growth = newCapital - oldCapital;
+                addLog(`Capital augmenté: +${formatUSDC(growth)} USDC`);
+                updateChart(newCapital);
+            });
+
+            // Écouter les alertes de sécurité
+            contract.on("SecurityAlert", (reason, value) => {
+                showError(`Alerte sécurité: ${reason}`);
+                addLog(`🚨 Alerte: ${reason}`);
+            });
+
+            // Écouter les trades rejetés
+            contract.on("TradeRejected", (reason) => {
+                showError(`Trade rejeté: ${reason}`);
+                addLog(`❌ Trade rejeté: ${reason}`);
+            });
+        }
+
+        // Fonctions d'administration (pour le propriétaire du contrat)
+        async function pauseContract() {
+            if (!contract) return;
+            
+            try {
+                const tx = await contract.pause();
+                await tx.wait();
+                showSuccess('Contrat mis en pause');
+                addLog('Contrat mis en pause');
+            } catch (error) {
+                showError('Erreur pause: ' + error.message);
+            }
+        }
+
+        async function unpauseContract() {
+            if (!contract) return;
+            
+            try {
+                const tx = await contract.unpause();
+                await tx.wait();
+                showSuccess('Contrat réactivé');
+                addLog('Contrat réactivé');
+            } catch (error) {
+                showError('Erreur réactivation: ' + error.message);
+            }
+        }
+
+        // Fonction de retrait d'urgence
+        async function emergencyWithdraw() {
+            if (!contract) return;
+            
+            const confirmation = confirm('Êtes-vous sûr de vouloir effectuer un retrait d\'urgence ? Cela va mettre le contrat en pause.');
+            
+            if (confirmation) {
+                try {
+                    // D'abord mettre en pause
+                    await pauseContract();
+                    
+                    // Puis retirer
+                    const tx = await contract.emergencyWithdraw();
+                    await tx.wait();
+                    
+                    showSuccess('Retrait d\'urgence effectué');
+                    addLog('🚨 Retrait d\'urgence effectué');
+                    
+                    await loadContractData();
+                } catch (error) {
+                    showError('Erreur retrait d\'urgence: ' + error.message);
+                }
+            }
+        }
+
+        // Vérification du statut de sécurité
+        async function checkSecurityStatus() {
+            if (!contract) return;
+            
+            try {
+                const status = await contract.getQuickStatus();
+                const [safe, priceDeviation, riskScore, dailyLossUsed, emergencyActive] = status;
+                
+                const securityDiv = document.querySelector('.security-status');
+                
+                if (safe && !emergencyActive) {
+                    securityDiv.innerHTML = `
+                        <div class="security-dot" style="background: #00ff88;"></div>
+                        <span>Marché sécurisé - Trading actif</span>
+                    `;
+                    securityDiv.style.borderColor = '#00ff88';
+                    securityDiv.style.background = 'rgba(0, 255, 136, 0.1)';
+                } else {
+                    securityDiv.innerHTML = `
+                        <div class="security-dot" style="background: #ff6b6b;"></div>
+                        <span>⚠️ Conditions de marché risquées</span>
+                    `;
+                    securityDiv.style.borderColor = '#ff6b6b';
+                    securityDiv.style.background = 'rgba(255, 107, 107, 0.1)';
+                }
+                
+                // Mettre à jour les détails de sécurité
+                updateSecurityDetails(priceDeviation, riskScore, dailyLossUsed, emergencyActive);
+                
+            } catch (error) {
+                console.error('Erreur vérification sécurité:', error);
+            }
+        }
+
+        // Mettre à jour les détails de sécurité
+        function updateSecurityDetails(priceDeviation, riskScore, dailyLoss, emergency) {
+            // Ajouter des métriques de sécurité détaillées si nécessaire
+            const deviation = parseFloat(ethers.formatUnits(priceDeviation, 0)) / 100;
+            const risk = parseFloat(ethers.formatUnits(riskScore, 0));
+            
+            if (deviation > 2.0) {
+                addLog(`⚠️ Déviation prix élevée: ${deviation.toFixed(2)}%`);
+            }
+            
+            if (risk > 50) {
+                addLog(`⚠️ Score de risque élevé: ${risk}/100`);
+            }
+            
+            if (emergency) {
+                showError('Mode d\'urgence activé - Trading suspendu');
+            }
+        }
+
+        // Démarrer les vérifications de sécurité périodiques
+        function startSecurityMonitoring() {
+            checkSecurityStatus();
+            setInterval(checkSecurityStatus, 15000); // Vérifier toutes les 15 secondes
+        }
+
+        // Mise à jour de la fonction de connexion pour inclure les événements
+        async function connectWalletComplete() {
+            await connectWallet();
+            if (contract) {
+                setupContractEventListeners();
+                startSecurityMonitoring();
+            }
+        }
+
+        // Gestionnaire pour les changements de réseau
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.on('chainChanged', (chainId) => {
+                if (chainId !== '0x89') { // Si ce n'est pas Polygon
+                    showError('Veuillez basculer vers le réseau Polygon');
+                    // Réinitialiser l'interface
+                    document.getElementById('walletAddress').textContent = 'Non connecté';
+                    document.getElementById('connectWallet').textContent = 'Connecter Wallet';
+                    document.getElementById('connectWallet').disabled = false;
+                    contract = null;
+                    usdcContract = null;
+                }
+            });
+
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    // Wallet déconnecté
+                    document.getElementById('walletAddress').textContent = 'Non connecté';
+                    document.getElementById('connectWallet').textContent = 'Connecter Wallet';
+                    document.getElementById('connectWallet').disabled = false;
+                    contract = null;
+                    usdcContract = null;
+                    userAddress = null;
+                    showError('Wallet déconnecté');
+                } else if (accounts[0] !== userAddress) {
+                    // Compte changé
+                    connectWalletComplete();
+                }
+            });
+        }
+
+        // Fonction pour obtenir les prix en temps réel (optionnel)
+        async function fetchTokenPrices() {
+            try {
+                // Utiliser une API de prix comme CoinGecko
+                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=usd-coin,matic-network&vs_currencies=usd');
+                const prices = await response.json();
+                
+                return {
+                    usdc: prices['usd-coin'].usd,
+                    matic: prices['matic-network'].usd
+                };
+            } catch (error) {
+                console.error('Erreur récupération prix:', error);
+                return { usdc: 1, matic: 0.5 }; // Valeurs par défaut
+            }
+        }
+
+        // Auto-actualisation des prix
+        setInterval(fetchTokenPrices, 30000); // Toutes les 30 secondes
+
+        // Fonction pour calculer les métriques de performance
+        function calculatePerformanceMetrics(initialCapital, currentCapital, totalTrades, successfulTrades) {
+            const roi = initialCapital > 0 ? ((currentCapital - initialCapital) / initialCapital) * 100 : 0;
+            const winRate = totalTrades > 0 ? (successfulTrades / totalTrades) * 100 : 0;
+            
+            return {
+                roi: roi.toFixed(2),
+                winRate: winRate.toFixed(1),
+                totalReturn: (currentCapital - initialCapital).toFixed(2)
+            };
+        }
+
+        // Affichage des métriques avancées
+        function displayAdvancedMetrics() {
+            // Cette fonction peut être étendue pour afficher des métriques plus détaillées
+            // comme le Sharpe ratio, le maximum drawdown, etc.
+        }
+
+        // Fonction de sauvegarde locale des données (optionnel)
+        function saveDataLocally(data) {
+            const dataToSave = {
+                timestamp: Date.now(),
+                capitalHistory: data.capitalHistory || [],
+                tradeHistory: data.tradeHistory || [],
+                userAddress: userAddress
+            };
+            
+            // Note: localStorage n'est pas disponible dans les artifacts Claude
+            // Cette fonction serait active dans un environnement de production
+            console.log('Données sauvegardées:', dataToSave);
+        }
+
+        // Initialisation finale
+        document.addEventListener('DOMContentLoaded', () => {
+            // Remplacer la fonction de connexion par la version complète
+            document.getElementById('connectWallet').removeEventListener('click', connectWallet);
+            document.getElementById('connectWallet').addEventListener('click', connectWalletComplete);
+            
+            addLog('Interface WealthBuilder initialisée');
+            addLog('Prêt pour la connexion wallet');
+        });
+    </script>
+</body>
+</html>
